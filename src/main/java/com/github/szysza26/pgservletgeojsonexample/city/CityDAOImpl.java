@@ -12,11 +12,10 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 
-public class CityDAOImpl implements CityDAO {
-	private static final String dbURL = "jdbc:postgresql://localhost:5432/db";
-	private static final String dbUser = "postgis";
-	private static final String dbPassword = "postgis";
+import com.github.szysza26.pgservletgeojsonexample.AppProperties;
 
+public class CityDAOImpl implements CityDAO {
+	
 	public List<City> getCities() {
 		List<City> cities = new ArrayList<City>();
 
@@ -24,7 +23,11 @@ public class CityDAOImpl implements CityDAO {
 		Statement stmt = null;
 		ResultSet res = null;
 		try {
-			conn = DriverManager.getConnection(dbURL, dbUser, dbPassword);
+			AppProperties appProperties = AppProperties.getInstance();
+			conn = DriverManager.getConnection(
+					appProperties.getProperty("dburl"), 
+					appProperties.getProperty("dbuser"), 
+					appProperties.getProperty("dbpassword"));
 			stmt = conn.createStatement();
 			res = stmt.executeQuery(
 					"SELECT name, population, ST_AsText(ST_Transform(geom, 4326)) as geom from cities");
@@ -68,4 +71,5 @@ public class CityDAOImpl implements CityDAO {
 
 		return cities;
 	}
+	
 }

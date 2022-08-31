@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.geometry.jts.JTS;
@@ -17,8 +18,11 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.geometry.MismatchedDimensionException;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
+
+import com.github.szysza26.pgservletgeojsonexample.AppProperties;
 
 
 public class CityServiceImplGT implements CityService {
@@ -28,14 +32,15 @@ public class CityServiceImplGT implements CityService {
 	private final MathTransform transform;
 	
 	public CityServiceImplGT() throws IOException, NoSuchAuthorityCodeException, FactoryException {
+		AppProperties appProperties = AppProperties.getInstance();
 		Map<String, Object> params = new HashMap<>();
-        params.put("dbtype", "postgis");
-        params.put("host", "localhost");
-        params.put("port", 5432);
-        params.put("schema", "public");
-        params.put("database", "db");
-        params.put("user", "postgis");
-        params.put("passwd", "postgis");
+        params.put("dbtype", appProperties.getProperty("dbtype"));
+        params.put("host", appProperties.getProperty("dbhost"));
+        params.put("port", Integer.parseInt(appProperties.getProperty("dbport")));
+        params.put("schema", appProperties.getProperty("dbschema"));
+        params.put("database", appProperties.getProperty("dbname"));
+        params.put("user", appProperties.getProperty("dbuser"));
+        params.put("passwd", appProperties.getProperty("dbpassword"));
 
         cityStory = DataStoreFinder.getDataStore(params);
         
@@ -43,16 +48,17 @@ public class CityServiceImplGT implements CityService {
         
         citySource = cityStory.getFeatureSource("cities");
         
-        transform = CRS.findMathTransform(CRS.decode("EPSG:2180", true), CRS.decode("EPSG:4326", true), false);
+        transform = CRS.findMathTransform(
+        		citySource.getSchema().getGeometryDescriptor().getCoordinateReferenceSystem(), 
+        		CRS.decode("EPSG:4326"), 
+        		false);
 	}
 
 	@Override
 	public List<CityDTO> getAllCities() {
 		List<CityDTO> cities = new ArrayList<>();
-		
-		SimpleFeatureIterator cityIterator;
-		try {
-			cityIterator = citySource.getFeatures().features();
+
+		try(SimpleFeatureIterator cityIterator = citySource.getFeatures().features();) {
 			while(cityIterator.hasNext()) {
 				SimpleFeature feature = cityIterator.next();
 				Point point_2180 = (Point) feature.getDefaultGeometry();

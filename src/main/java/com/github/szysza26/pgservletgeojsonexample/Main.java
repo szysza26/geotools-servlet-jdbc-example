@@ -11,6 +11,7 @@ import org.apache.catalina.webresources.StandardRoot;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
+		System.setProperty("org.geotools.referencing.forceXY", "true");
 		String webappDirLocation = "src/main/webapp/";
 		
 		Tomcat tomcat = new Tomcat();
